@@ -30,6 +30,8 @@
         const hash = window.location.hash.substring(1);
         const match = hash.match(/^\/room\/([^\/]+)/);
 
+        console.log("room: "+hash);
+
         let widgetId = null;
         if (match) {
             widgetId = match[1];  // Extracted roomId or widgetId from the URL hash
