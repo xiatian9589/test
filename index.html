@@ -26,7 +26,20 @@
     <script>
         const { WidgetApi } = mxwidgets();
 
-        const widgetApi = new WidgetApi(); // ✅ no parent or widgetId passed
+        // ✅ Extract widgetId and parentUrl from the iframe query string
+        const queryParams = new URLSearchParams(window.location.search);
+        const sWidgetId = queryParams.get("widgetId");
+        const sParentUrl = queryParams.get("parentUrl");
+
+        console.log("Loaded widget with ID:", sWidgetId);
+        console.log("Parent URL:", sParentUrl);
+
+        // ✅ Initialize WidgetApi with dynamic values
+        const widgetApi = new WidgetApi({
+            widgetId: sWidgetId,
+            parent: window.parent,
+            targetOrigin: sParentUrl || "*" // fallback to "*" for dev
+        });
 
         const selectedMessages = new Set();
 
@@ -37,8 +50,8 @@
                     "org.matrix.msc2762.send.event:m.room.message"
                 ]);
 
-                await widgetApi.start(); // Start communication
-                await widgetApi.sendContentLoaded(); // Notify client we're ready
+                await widgetApi.start();
+                await widgetApi.sendContentLoaded();
 
                 console.log("Widget ready with approved capabilities");
 
