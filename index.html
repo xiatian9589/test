@@ -31,7 +31,7 @@
             parent: window.parent,
         });
 
-        console.log("widgetAPI:", JSON.stringify(widgetApi, null, 2));
+        console.log("WidgetApi methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(widgetApi)));
 
         const selectedMessages = new Set();
 
