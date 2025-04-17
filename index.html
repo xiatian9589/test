@@ -1,33 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Basic Matrix Widget</title>
+  <title>Forward Message Widget</title>
+  <script type="module" src="./dist/index.js"></script>
 </head>
 <body>
-  <h2>🎉 Hello from Widget!</h2>
-  <p id="status">Waiting for Matrix...</p>
-
-  <script>
-    // Handle postMessage from Matrix client (Element)
-    window.addEventListener("message", function(event) {
-      // Accept only messages from the parent frame (Element)
-      if (event.origin !== window.origin && event.data?.api) {
-        console.log("Received message from Element:", event.data);
-        document.getElementById("status").textContent = "✅ Received message from Element";
-        
-        // Reply with capabilities
-        event.source.postMessage({
-          api: "from_widget",
-          requestId: event.data.requestId,
-          response: {
-            capabilities: [
-              "org.matrix.msc2871.send_event",
-              "org.matrix.msc2871.receive_event"
-            ]
-          }
-        }, event.origin);
-      }
-    }, false);
-  </script>
+  <h2>Forward Message</h2>
+  <div>
+    <label for="roomSelect">Select target room:</label>
+    <select id="roomSelect"></select>
+  </div>
+  <button id="forwardBtn">Forward selected message</button>
+  <p id="status"></p>
 </body>
 </html>
