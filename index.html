@@ -26,20 +26,15 @@
     <script>
         const { WidgetApi } = mxwidgets();
 
-        // ✅ Extract widgetId and parentUrl from the iframe query string
-        const queryParams = new URLSearchParams(window.location.search);
-        const sWidgetId = queryParams.get("widgetId");
-        const sParentUrl = queryParams.get("parentUrl");
-
-        console.log("Loaded widget with ID:", sWidgetId);
-        console.log("Parent URL:", sParentUrl);
-
         // ✅ Initialize WidgetApi with dynamic values
         const widgetApi = new WidgetApi({
             widgetId: sWidgetId,
             parent: window.parent,
             targetOrigin: sParentUrl || "*" // fallback to "*" for dev
         });
+
+        console.log("Widget ID:", widgetApi.widgetId);
+        console.log("Parent origin:", widgetApi._targetOrigin);
 
         const selectedMessages = new Set();
 
@@ -51,7 +46,6 @@
                 ]);
 
                 await widgetApi.start();
-                await widgetApi.sendContentLoaded();
 
                 console.log("Widget ready with approved capabilities");
 
