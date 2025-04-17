@@ -1,31 +1,33 @@
-<!-- widget.html -->
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Matrix Widget Test</title>
+  <title>Basic Matrix Widget</title>
 </head>
 <body>
   <h2>🎉 Hello from Widget!</h2>
   <p id="status">Waiting for Matrix...</p>
 
-  <script src="https://unpkg.com/matrix-widget-api"></script>
   <script>
-    const widgetApi = new window.MatrixWidgetApi();
-
-    widgetApi.on("action:capabilities", (ev) => {
-      widgetApi.transport.reply(ev, {
-        capabilities: [
-          "org.matrix.msc2871.receive_event",
-          "org.matrix.msc2871.send_event",
-        ],
-      });
-    });
-
-    widgetApi.on("ready", () => {
-      document.getElementById("status").textContent = "✅ Connected to Element!";
-    });
-
-    widgetApi.start();
+    // Handle postMessage from Matrix client (Element)
+    window.addEventListener("message", function(event) {
+      // Accept only messages from the parent frame (Element)
+      if (event.origin !== window.origin && event.data?.api) {
+        console.log("Received message from Element:", event.data);
+        document.getElementById("status").textContent = "✅ Received message from Element";
+        
+        // Reply with capabilities
+        event.source.postMessage({
+          api: "from_widget",
+          requestId: event.data.requestId,
+          response: {
+            capabilities: [
+              "org.matrix.msc2871.send_event",
+              "org.matrix.msc2871.receive_event"
+            ]
+          }
+        }, event.origin);
+      }
+    }, false);
   </script>
 </body>
 </html>
