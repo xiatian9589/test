@@ -27,8 +27,8 @@
         const { WidgetApi } = mxwidgets();
 
         // Extract widgetId from the URL hash
-        const hash = window.location.hash;
-        const match = hash.match(/^#\/room\/([^\/]+)/);
+        const hash = window.location.hash.substring(1);
+        const match = hash.match(/^\/room\/([^\/]+)/);
 
         let widgetId = null;
         if (match) {
