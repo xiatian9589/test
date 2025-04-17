@@ -27,7 +27,7 @@
         const { WidgetApi } = mxwidgets();
 
         const widgetApi = new WidgetApi({
-            widgetId: window.location.hash.substring(1),
+            widgetId: window.location.hash.substring(1), // Get widget ID from URL hash
             parent: window.parent,
         });
 
@@ -35,25 +35,43 @@
 
         const selectedMessages = new Set();
 
+        // Request necessary capabilities for timeline and sending messages
+        widgetApi.requestCapabilities([
+            "org.matrix.msc2762.timeline:*",
+            "org.matrix.msc2762.send.event:m.room.message"
+        ])
+
+        // Start the widget and notify the parent
+        widgetApi.start();
+        widgetApi.sendContentLoaded(); // Let the parent know the widget is ready
+
+        // Listen for custom actions if needed
+        widgetApi.on(`action:${WidgetApiToWidgetAction.UpdateVisibility}`, (ev) => {
+            ev.preventDefault(); // Prevent default behavior and handle the action
+            console.log('Visibility update request:', ev.detail);
+            // Handle visibility update here if needed
+            widgetApi.transport.reply(ev.detail, {}); // Respond to the action
+        });
+
+        widgetApi.on("action:com.example.my_action", (ev) => {
+            ev.preventDefault(); // Prevent default behavior and handle the action
+            console.log('Custom action received:', ev.detail);
+            // Handle the custom action here
+            widgetApi.transport.reply(ev.detail, { custom: "reply" });
+        });
+
+        // When the widget is ready, load messages from the timeline
         widgetApi.on("ready", async () => {
             console.log("Widget ready with approved capabilities");
 
-            try {
-                // Request capabilities directly if possible
-                await widgetApi.requestCapabilities([
-                    "org.matrix.msc2762.timeline:*",
-                    "org.matrix.msc2762.send.event:m.room.message"
-                ]);
-                console.log('Capabilities request sent successfully');
-            } catch (err) {
-                console.error('Error requesting capabilities:', err);
-            }
-
+            // Get current room ID
             const roomId = await getCurrentRoomId();
             console.log("Current room ID:", roomId);
 
+            // Load messages from the current room
             loadMessages(roomId);
 
+            // Forward messages when the button is clicked
             document.getElementById('forwardBtn').addEventListener('click', () => {
                 const targetRoomId = document.getElementById('targetRoom').value.trim();
                 if (!targetRoomId) {
@@ -70,6 +88,7 @@
             });
         });
 
+        // Get the current room ID based on the timeline events
         async function getCurrentRoomId() {
             try {
                 const timeline = await widgetApi.readTimelineEvents("m.room.message", { limit: 1 });
@@ -80,6 +99,7 @@
             return null;
         }
 
+        // Load the most recent messages from the timeline
         async function loadMessages(roomId) {
             try {
                 const messageList = document.getElementById('messageList');
@@ -129,6 +149,7 @@
             }
         }
 
+        // Forward the selected messages to the target room
         async function forwardMessages(messages, targetRoomId) {
             try {
                 for (const message of messages) {
