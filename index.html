@@ -45,21 +45,6 @@
         widgetApi.start();
         widgetApi.sendContentLoaded(); // Let the parent know the widget is ready
 
-        // Listen for custom actions if needed
-        widgetApi.on(`action:${WidgetApiToWidgetAction.UpdateVisibility}`, (ev) => {
-            ev.preventDefault(); // Prevent default behavior and handle the action
-            console.log('Visibility update request:', ev.detail);
-            // Handle visibility update here if needed
-            widgetApi.transport.reply(ev.detail, {}); // Respond to the action
-        });
-
-        widgetApi.on("action:com.example.my_action", (ev) => {
-            ev.preventDefault(); // Prevent default behavior and handle the action
-            console.log('Custom action received:', ev.detail);
-            // Handle the custom action here
-            widgetApi.transport.reply(ev.detail, { custom: "reply" });
-        });
-
         // When the widget is ready, load messages from the timeline
         widgetApi.on("ready", async () => {
             console.log("Widget ready with approved capabilities");
