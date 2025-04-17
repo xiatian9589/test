@@ -1,0 +1,31 @@
+<!-- widget.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Matrix Widget Test</title>
+</head>
+<body>
+  <h2>🎉 Hello from Widget!</h2>
+  <p id="status">Waiting for Matrix...</p>
+
+  <script src="https://unpkg.com/matrix-widget-api"></script>
+  <script>
+    const widgetApi = new window.MatrixWidgetApi();
+
+    widgetApi.on("action:capabilities", (ev) => {
+      widgetApi.transport.reply(ev, {
+        capabilities: [
+          "org.matrix.msc2871.receive_event",
+          "org.matrix.msc2871.send_event",
+        ],
+      });
+    });
+
+    widgetApi.on("ready", () => {
+      document.getElementById("status").textContent = "✅ Connected to Element!";
+    });
+
+    widgetApi.start();
+  </script>
+</body>
+</html>
