@@ -25,10 +25,10 @@
 
     <script>
         // Initialize the widget API
-const widgetApi = new window.matrixWidgetApi.WidgetApi(
-    window.location.hash.substring(1), // widgetId from URL fragment
-    window.parent // parent window
-);
+const widgetApi = new mxwidgets.WidgetApi({
+    widgetId: window.location.hash.substring(1),
+    parent: window.parent
+});
 
 // Request necessary capabilities
 widgetApi.requestCapabilities([
