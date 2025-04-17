@@ -24,11 +24,12 @@
     <div id="messageList"></div>
 
     <script>
-        window.addEventListener("load", () => {
-            const widgetApi = new mxwidgets.WidgetApi({
-                widgetId: window.location.hash.substring(1),
-                parent: window.parent
-            });
+        const { WidgetApi } = mxwidgets(); // <- call mxwidgets()
+
+        const widgetApi = new WidgetApi({
+            widgetId: window.location.hash.substring(1),
+            parent: window.parent,
+        });
 
             // Request necessary capabilities
             widgetApi.requestCapabilities([
