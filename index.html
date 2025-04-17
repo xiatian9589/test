@@ -26,33 +26,31 @@
     <script>
         const { WidgetApi } = mxwidgets();
 
-        let widgetApi = null;  // Declare the widgetApi variable outside so it can be used globally
+        let widgetApi = null;
+        let initialized = false;
 
-        // Function to initialize widgetApi after hash changes
-        function initializeWidget() {
-            // Extract widgetId from the URL hash
-            const hash = window.location.hash.substring(1); // Remove the '#'
+        function tryInitializeWidget() {
+            if (initialized) return;
+
+            const hash = window.location.hash.substring(1); // Remove #
             const match = hash.match(/^\/room\/([^\/]+)/);
 
-            console.log("room: " + hash);
-
-            let widgetId = null;
-            if (match) {
-                widgetId = match[1];  // Extract roomId or widgetId from the URL hash
-                console.log("Widget ID (room ID):", widgetId);
-            } else {
-                console.error("Widget ID not found in the URL hash.");
+            if (!match) {
+                console.log("Waiting for valid room hash...");
                 return;
             }
 
-            // Initialize WidgetApi with dynamic widgetId
-            widgetApi = new WidgetApi({
-                widgetId: widgetId, // Pass extracted widgetId (or roomId)
-                parent: window.parent,
-                targetOrigin: "*", // fallback to "*" for dev
-            });
+            const widgetId = match[1];
+            initialized = true; // Prevent re-initialization
+            clearInterval(hashWatcher); // Stop polling
 
-            console.log("Widget API initialized with ID:", widgetApi.widgetId);
+            console.log("Detected room ID:", widgetId);
+
+            widgetApi = new WidgetApi({
+                widgetId: widgetId,
+                parent: window.parent,
+                targetOrigin: "*",
+            });
 
             const selectedMessages = new Set();
 
@@ -175,13 +173,8 @@
             }
         }
 
-        // Listen for hash changes to initialize the widget when the room ID is available
-        window.addEventListener('hashchange', initializeWidget);
-
-        // Initialize widget initially in case the hash is already set
-        if (window.location.hash) {
-            initializeWidget();
-        }
+        // Poll every 300ms until room hash is available
+        const hashWatcher = setInterval(tryInitializeWidget, 300);
     </script>
 </body>
 </html>
