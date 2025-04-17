@@ -26,23 +26,27 @@
     <script>
         const { WidgetApi } = mxwidgets();
 
-        // Extract widgetId from the URL hash
-        const hash = window.location.hash.substring(1);
-        const match = hash.match(/^\/room\/([^\/]+)/);
+        let widgetApi = null;  // Declare the widgetApi variable outside so it can be used globally
 
-        console.log("room: "+hash);
+        // Function to initialize widgetApi after hash changes
+        function initializeWidget() {
+            // Extract widgetId from the URL hash
+            const hash = window.location.hash.substring(1); // Remove the '#'
+            const match = hash.match(/^\/room\/([^\/]+)/);
 
-        let widgetId = null;
-        if (match) {
-            widgetId = match[1];  // Extracted roomId or widgetId from the URL hash
-            console.log("Widget ID (room ID):", widgetId);
-        } else {
-            console.error("Widget ID not found in the URL hash.");
-        }
+            console.log("room: " + hash);
 
-        // Initialize WidgetApi with dynamic widgetId
-        if (widgetId) {
-            const widgetApi = new WidgetApi({
+            let widgetId = null;
+            if (match) {
+                widgetId = match[1];  // Extract roomId or widgetId from the URL hash
+                console.log("Widget ID (room ID):", widgetId);
+            } else {
+                console.error("Widget ID not found in the URL hash.");
+                return;
+            }
+
+            // Initialize WidgetApi with dynamic widgetId
+            widgetApi = new WidgetApi({
                 widgetId: widgetId, // Pass extracted widgetId (or roomId)
                 parent: window.parent,
                 targetOrigin: "*", // fallback to "*" for dev
@@ -169,6 +173,14 @@
                     alert("Error forwarding messages: " + e.message);
                 }
             }
+        }
+
+        // Listen for hash changes to initialize the widget when the room ID is available
+        window.addEventListener('hashchange', initializeWidget);
+
+        // Initialize widget initially in case the hash is already set
+        if (window.location.hash) {
+            initializeWidget();
         }
     </script>
 </body>
