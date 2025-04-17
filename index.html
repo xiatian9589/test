@@ -26,54 +26,46 @@
     <script>
         const { WidgetApi } = mxwidgets();
 
-        const widgetApi = new WidgetApi({
-            widgetId: window.location.hash.substring(1), // Get widget ID from URL hash
-            parent: window.parent,
-        });
-
-        console.log("WidgetApi methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(widgetApi)));
+        const widgetApi = new WidgetApi(); // ✅ no parent or widgetId passed
 
         const selectedMessages = new Set();
 
-        // Request necessary capabilities for timeline and sending messages
-        widgetApi.requestCapabilities([
-            "org.matrix.msc2762.timeline:*",
-            "org.matrix.msc2762.send.event:m.room.message"
-        ])
+        (async () => {
+            try {
+                await widgetApi.requestCapabilities([
+                    "org.matrix.msc2762.timeline:*",
+                    "org.matrix.msc2762.send.event:m.room.message"
+                ]);
 
-        // Start the widget and notify the parent
-        widgetApi.start();
-        widgetApi.sendContentLoaded(); // Let the parent know the widget is ready
+                await widgetApi.start(); // Start communication
+                await widgetApi.sendContentLoaded(); // Notify client we're ready
 
-        // When the widget is ready, load messages from the timeline
-        widgetApi.on("ready", async () => {
-            console.log("Widget ready with approved capabilities");
+                console.log("Widget ready with approved capabilities");
 
-            // Get current room ID
-            const roomId = await getCurrentRoomId();
-            console.log("Current room ID:", roomId);
+                const roomId = await getCurrentRoomId();
+                console.log("Current room ID:", roomId);
 
-            // Load messages from the current room
-            loadMessages(roomId);
+                loadMessages(roomId);
 
-            // Forward messages when the button is clicked
-            document.getElementById('forwardBtn').addEventListener('click', () => {
-                const targetRoomId = document.getElementById('targetRoom').value.trim();
-                if (!targetRoomId) {
-                    alert("Please enter a target room ID");
-                    return;
-                }
+                document.getElementById('forwardBtn').addEventListener('click', () => {
+                    const targetRoomId = document.getElementById('targetRoom').value.trim();
+                    if (!targetRoomId) {
+                        alert("Please enter a target room ID");
+                        return;
+                    }
 
-                if (selectedMessages.size === 0) {
-                    alert("Please select messages to forward");
-                    return;
-                }
+                    if (selectedMessages.size === 0) {
+                        alert("Please select messages to forward");
+                        return;
+                    }
 
-                forwardMessages(Array.from(selectedMessages), targetRoomId);
-            });
-        });
+                    forwardMessages(Array.from(selectedMessages), targetRoomId);
+                });
+            } catch (err) {
+                console.error("Widget initialization error:", err);
+            }
+        })();
 
-        // Get the current room ID based on the timeline events
         async function getCurrentRoomId() {
             try {
                 const timeline = await widgetApi.readTimelineEvents("m.room.message", { limit: 1 });
@@ -84,7 +76,6 @@
             return null;
         }
 
-        // Load the most recent messages from the timeline
         async function loadMessages(roomId) {
             try {
                 const messageList = document.getElementById('messageList');
@@ -134,7 +125,6 @@
             }
         }
 
-        // Forward the selected messages to the target room
         async function forwardMessages(messages, targetRoomId) {
             try {
                 for (const message of messages) {
