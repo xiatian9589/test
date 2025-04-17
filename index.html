@@ -26,133 +26,146 @@
     <script>
         const { WidgetApi } = mxwidgets();
 
-        // ✅ Initialize WidgetApi with dynamic values
-        const widgetApi = new WidgetApi({
-            widgetId: sWidgetId,
-            parent: window.parent,
-            targetOrigin: sParentUrl || "*" // fallback to "*" for dev
-        });
+        // Extract widgetId from the URL hash
+        const hash = window.location.hash;
+        const match = hash.match(/^#\/room\/([^\/]+)/);
 
-        console.log("Widget ID:", widgetApi.widgetId);
-        console.log("Parent origin:", widgetApi._targetOrigin);
-
-        const selectedMessages = new Set();
-
-        (async () => {
-            try {
-                await widgetApi.requestCapabilities([
-                    "org.matrix.msc2762.timeline:*",
-                    "org.matrix.msc2762.send.event:m.room.message"
-                ]);
-
-                await widgetApi.start();
-
-                console.log("Widget ready with approved capabilities");
-
-                const roomId = await getCurrentRoomId();
-                console.log("Current room ID:", roomId);
-
-                loadMessages(roomId);
-
-                document.getElementById('forwardBtn').addEventListener('click', () => {
-                    const targetRoomId = document.getElementById('targetRoom').value.trim();
-                    if (!targetRoomId) {
-                        alert("Please enter a target room ID");
-                        return;
-                    }
-
-                    if (selectedMessages.size === 0) {
-                        alert("Please select messages to forward");
-                        return;
-                    }
-
-                    forwardMessages(Array.from(selectedMessages), targetRoomId);
-                });
-            } catch (err) {
-                console.error("Widget initialization error:", err);
-            }
-        })();
-
-        async function getCurrentRoomId() {
-            try {
-                const timeline = await widgetApi.readTimelineEvents("m.room.message", { limit: 1 });
-                if (timeline.length > 0) return timeline[0].room_id;
-            } catch (e) {
-                console.error("Error getting current room ID:", e);
-            }
-            return null;
+        let widgetId = null;
+        if (match) {
+            widgetId = match[1];  // Extracted roomId or widgetId from the URL hash
+            console.log("Widget ID (room ID):", widgetId);
+        } else {
+            console.error("Widget ID not found in the URL hash.");
         }
 
-        async function loadMessages(roomId) {
-            try {
-                const messageList = document.getElementById('messageList');
-                messageList.innerHTML = '<p>Loading messages...</p>';
+        // Initialize WidgetApi with dynamic widgetId
+        if (widgetId) {
+            const widgetApi = new WidgetApi({
+                widgetId: widgetId, // Pass extracted widgetId (or roomId)
+                parent: window.parent,
+                targetOrigin: "*", // fallback to "*" for dev
+            });
 
-                const events = await widgetApi.readTimelineEvents("m.room.message", {
-                    limit: 20,
-                    roomIds: [roomId]
-                });
+            console.log("Widget API initialized with ID:", widgetApi.widgetId);
 
-                messageList.innerHTML = '';
-                events.forEach(event => {
-                    if (event.content && event.content.body) {
-                        const messageDiv = document.createElement('div');
-                        messageDiv.style.margin = '5px';
-                        messageDiv.style.padding = '5px';
-                        messageDiv.style.border = '1px solid #ddd';
+            const selectedMessages = new Set();
 
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.addEventListener('change', (e) => {
-                            if (e.target.checked) {
-                                selectedMessages.add(event);
-                            } else {
-                                selectedMessages.delete(event);
-                            }
-                        });
+            (async () => {
+                try {
+                    await widgetApi.requestCapabilities([
+                        "org.matrix.msc2762.timeline:*",
+                        "org.matrix.msc2762.send.event:m.room.message"
+                    ]);
 
-                        const sender = document.createElement('span');
-                        sender.textContent = `${event.sender}: `;
-                        sender.style.fontWeight = 'bold';
+                    await widgetApi.start();
 
-                        const content = document.createElement('span');
-                        content.textContent = event.content.body;
+                    console.log("Widget ready with approved capabilities");
 
-                        messageDiv.appendChild(checkbox);
-                        messageDiv.appendChild(sender);
-                        messageDiv.appendChild(content);
-                        messageDiv.appendChild(document.createElement('br'));
+                    const roomId = await getCurrentRoomId();
+                    console.log("Current room ID:", roomId);
 
-                        messageList.appendChild(messageDiv);
-                    }
-                });
-            } catch (e) {
-                console.error("Error loading messages:", e);
-                document.getElementById('messageList').innerHTML = '<p>Error loading messages</p>';
-            }
-        }
+                    loadMessages(roomId);
 
-        async function forwardMessages(messages, targetRoomId) {
-            try {
-                for (const message of messages) {
-                    await widgetApi.sendRoomEvent(
-                        "m.room.message",
-                        {
-                            msgtype: "m.text",
-                            body: `Forwarded from ${message.sender}: ${message.content.body}`
-                        },
-                        targetRoomId
-                    );
+                    document.getElementById('forwardBtn').addEventListener('click', () => {
+                        const targetRoomId = document.getElementById('targetRoom').value.trim();
+                        if (!targetRoomId) {
+                            alert("Please enter a target room ID");
+                            return;
+                        }
+
+                        if (selectedMessages.size === 0) {
+                            alert("Please select messages to forward");
+                            return;
+                        }
+
+                        forwardMessages(Array.from(selectedMessages), targetRoomId);
+                    });
+                } catch (err) {
+                    console.error("Widget initialization error:", err);
                 }
+            })();
 
-                alert(`Successfully forwarded ${messages.length} messages to ${targetRoomId}`);
-                selectedMessages.clear();
-                document.querySelectorAll('#messageList input[type="checkbox"]').forEach(cb => {
-                    cb.checked = false;
-                });
-            } catch (e) {
-                console.error("Error forwarding messages:", e);
-                alert("Error forwarding messages: " + e.message);
+            async function getCurrentRoomId() {
+                try {
+                    const timeline = await widgetApi.readTimelineEvents("m.room.message", { limit: 1 });
+                    if (timeline.length > 0) return timeline[0].room_id;
+                } catch (e) {
+                    console.error("Error getting current room ID:", e);
+                }
+                return null;
+            }
+
+            async function loadMessages(roomId) {
+                try {
+                    const messageList = document.getElementById('messageList');
+                    messageList.innerHTML = '<p>Loading messages...</p>';
+
+                    const events = await widgetApi.readTimelineEvents("m.room.message", {
+                        limit: 20,
+                        roomIds: [roomId]
+                    });
+
+                    messageList.innerHTML = '';
+                    events.forEach(event => {
+                        if (event.content && event.content.body) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.margin = '5px';
+                            messageDiv.style.padding = '5px';
+                            messageDiv.style.border = '1px solid #ddd';
+
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.addEventListener('change', (e) => {
+                                if (e.target.checked) {
+                                    selectedMessages.add(event);
+                                } else {
+                                    selectedMessages.delete(event);
+                                }
+                            });
+
+                            const sender = document.createElement('span');
+                            sender.textContent = `${event.sender}: `;
+                            sender.style.fontWeight = 'bold';
+
+                            const content = document.createElement('span');
+                            content.textContent = event.content.body;
+
+                            messageDiv.appendChild(checkbox);
+                            messageDiv.appendChild(sender);
+                            messageDiv.appendChild(content);
+                            messageDiv.appendChild(document.createElement('br'));
+
+                            messageList.appendChild(messageDiv);
+                        }
+                    });
+                } catch (e) {
+                    console.error("Error loading messages:", e);
+                    document.getElementById('messageList').innerHTML = '<p>Error loading messages</p>';
+                }
+            }
+
+            async function forwardMessages(messages, targetRoomId) {
+                try {
+                    for (const message of messages) {
+                        await widgetApi.sendRoomEvent(
+                            "m.room.message",
+                            {
+                                msgtype: "m.text",
+                                body: `Forwarded from ${message.sender}: ${message.content.body}`
+                            },
+                            targetRoomId
+                        );
+                    }
+
+                    alert(`Successfully forwarded ${messages.length} messages to ${targetRoomId}`);
+                    selectedMessages.clear();
+                    document.querySelectorAll('#messageList input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                    });
+                } catch (e) {
+                    console.error("Error forwarding messages:", e);
+                    alert("Error forwarding messages: " + e.message);
+                }
             }
         }
     </script>
