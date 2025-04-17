@@ -33,19 +33,21 @@
 
         console.log("widgetAPI: "+ widgetApi);
 
-        widgetApi.requestCapabilities([
-            "org.matrix.msc2762.timeline:*",
-            "org.matrix.msc2762.send.event:m.room.message"
-        ]).then(() => {
-            console.log('Capabilities request sent successfully');
-        }).catch((err) => {
-            console.error('Error requesting capabilities:', err);
-        });
-
         const selectedMessages = new Set();
 
         widgetApi.on("ready", async () => {
             console.log("Widget ready with approved capabilities");
+
+            try {
+                // Request capabilities directly if possible
+                await widgetApi.requestCapabilities([
+                    "org.matrix.msc2762.timeline:*",
+                    "org.matrix.msc2762.send.event:m.room.message"
+                ]);
+                console.log('Capabilities request sent successfully');
+            } catch (err) {
+                console.error('Error requesting capabilities:', err);
+            }
 
             const roomId = await getCurrentRoomId();
             console.log("Current room ID:", roomId);
